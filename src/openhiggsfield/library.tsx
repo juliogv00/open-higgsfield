@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import {
   createCharacter,
   deleteObject,
-  getCharacterTrainingQuote,
   listCharacters,
   listObjects,
   saveObject,
@@ -215,31 +214,23 @@ function FilePickButton({
 
 /* ── Characters ───────────────────────────────────────────────────────── */
 
-type Quote = Awaited<ReturnType<typeof getCharacterTrainingQuote>>;
+/* Mirrors the bounds createCharacter enforces on the server. */
+const MIN_PHOTOS = 5;
+const MAX_PHOTOS = 80;
 
 export function CharactersDialog({ onClose }: { onClose: () => void }) {
   const { characters, error: listError, setCharacters } = useCharacters();
   const picked = useCharacter((state) => state.id);
   const pick = useCharacter((state) => state.pick);
-  const [quote, setQuote] = useState<Quote | null>(null);
   const [name, setName] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [confirmed, setConfirmed] = useState(false);
   const [phase, setPhase] = useState<"idle" | "uploading" | "training">("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void getCharacterTrainingQuote()
-      .then(setQuote)
-      .catch(() => undefined);
-  }, []);
-
-  const min = quote?.minPhotos ?? 5;
-  const max = quote?.maxPhotos ?? 80;
-  const overCap = quote ? quote.cap > 0 && quote.spent + quote.eur > quote.cap : false;
-  const ready =
-    phase === "idle" && name.trim().length > 0 && files.length >= min && files.length <= max && confirmed && !overCap;
+  const min = MIN_PHOTOS;
+  const max = MAX_PHOTOS;
+  const ready = phase === "idle" && name.trim().length > 0 && files.length >= min && files.length <= max;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -254,8 +245,6 @@ export function CharactersDialog({ onClose }: { onClose: () => void }) {
       setCharacters((prev) => [created, ...(prev ?? [])]);
       setName("");
       setFiles([]);
-      setConfirmed(false);
-      void getCharacterTrainingQuote().then(setQuote);
     } catch (caught) {
       setError(message(caught, "Training could not start"));
     } finally {
@@ -343,20 +332,10 @@ export function CharactersDialog({ onClose }: { onClose: () => void }) {
           />
         </Field>
 
-        <label className="ohf-lib-confirm">
-          <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-          <span>
-            Training costs {quote?.credits ?? 40} credits (about {(quote?.eur ?? 4).toFixed(2)} € at the declared
-            rate) and is charged even if it fails.
-            {quote &&
-              ` Counted today: ${quote.spent.toFixed(2)} €${quote.cap > 0 ? ` of ${quote.cap.toFixed(2)} €` : ""}.`}
-          </span>
-        </label>
-        {overCap && (
-          <p className="ohf-lib-error">
-            This would cross today&apos;s spending cap. Raise IMAGEN_GATEWAY_CAP_EUR or train tomorrow.
-          </p>
-        )}
+        <p className="ohf-lib-hint">
+          Training draws on your Higgsfield balance and takes about ten minutes. The real cost shows on the
+          Higgsfield dashboard.
+        </p>
         {error && <p className="ohf-lib-error">{error}</p>}
 
         <div className="ohf-keys-actions">

@@ -26,14 +26,7 @@ import {
 import type { ObjectSet } from "./library";
 import { createPlatformClient } from "./platform";
 import type { Character, StatusResult } from "./platform";
-import {
-  CHARACTER_TRAINING_CREDITS,
-  CREDIT_EUR,
-  logEvent,
-  priceFor,
-  reserveSpend,
-  spendToday,
-} from "./spend";
+import { logEvent } from "./log";
 import { toPlatform } from "./to-platform";
 
 /** Photos Higgsfield asks for to train a face: at least 5, 20+ recommended. */
@@ -65,16 +58,16 @@ export async function submitGeneration(plane: GenerationPlane) {
   };
   const { path, body } = toPlatform(parsed);
   const client = createPlatformClient(await readCredentials());
-  const results = Number(parsed.settings.batchSize) || 1;
-  await reserveSpend(priceFor(model, results), {
+  const queued = await client.submit(path, body);
+  await logEvent({
     event: "generate",
     model: model.id,
     path,
+    request_id: queued.requestId,
+    results: Number(parsed.settings.batchSize) || 1,
     character: parsed.character?.id,
     references: Object.values(parsed.media).reduce((n, list) => n + (list?.length ?? 0), 0),
   });
-  const queued = await client.submit(path, body);
-  await logEvent({ event: "queued", model: model.id, request_id: queued.requestId });
   return queued;
 }
 
@@ -116,18 +109,6 @@ export async function uploadMedia(form: FormData): Promise<{ url: string }> {
 
 /* ── Characters (Soul ID) ─────────────────────────────────────────────── */
 
-export async function getCharacterTrainingQuote() {
-  const { spent, cap } = await spendToday();
-  return {
-    credits: CHARACTER_TRAINING_CREDITS,
-    eur: CHARACTER_TRAINING_CREDITS * CREDIT_EUR,
-    spent,
-    cap,
-    minPhotos: CHARACTER_MIN_PHOTOS,
-    maxPhotos: CHARACTER_MAX_PHOTOS,
-  };
-}
-
 export async function listCharacters(): Promise<Character[]> {
   return createPlatformClient(await readCredentials()).listCharacters();
 }
@@ -137,8 +118,7 @@ export async function getCharacter(id: unknown): Promise<Character> {
   return createPlatformClient(await readCredentials()).getCharacter(id);
 }
 
-/** Trains a Soul ID from photos already uploaded through `uploadMedia`. The
-    price is booked before the request leaves: a failed training is charged. */
+/** Trains a Soul ID from photos already uploaded through `uploadMedia`. */
 export async function createCharacter(data: unknown): Promise<Character> {
   const payload = asObject(data, "Invalid character payload");
   const name = typeof payload.name === "string" ? payload.name.trim() : "";
@@ -153,13 +133,8 @@ export async function createCharacter(data: unknown): Promise<Character> {
     throw new Error(`At most ${CHARACTER_MAX_PHOTOS} photos are accepted`);
   }
   const client = createPlatformClient(await readCredentials());
-  await reserveSpend(CHARACTER_TRAINING_CREDITS * CREDIT_EUR, {
-    event: "character_train",
-    name,
-    photos: urls.length,
-  });
   const character = await client.createCharacter({ name, imageUrls: urls });
-  await logEvent({ event: "character_queued", name, soul_id: character.id });
+  await logEvent({ event: "character_train", name, photos: urls.length, soul_id: character.id });
   return character;
 }
 

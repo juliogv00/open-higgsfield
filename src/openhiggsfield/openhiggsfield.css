@@ -3925,19 +3925,6 @@ a.ohf-btn-solid {
   gap: 6px;
   margin-top: 4px;
 }
-.ohf-lib-confirm {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--tx2);
-  cursor: pointer;
-}
-.ohf-lib-confirm input {
-  margin-top: 2px;
-  flex-shrink: 0;
-}
 .ohf-lib-pop {
   width: min(280px, 100%);
   display: flex;

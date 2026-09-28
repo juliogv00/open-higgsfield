@@ -155,9 +155,6 @@ function describeError(caught: unknown): string {
   if (caught instanceof MissingCredentialsError || message.includes("Missing platform key")) {
     return "Add your platform key to generate.";
   }
-  /* The spending cap is a decision, not a fault: retrying or checking the key
-     would not help, so its own sentence stands alone. */
-  if (message.startsWith("Daily spending cap")) return message;
   return `Generation failed — ${message.replace(/\.$/, "")}. Try again; if it repeats, check the key in the sidebar.`;
 }
 
