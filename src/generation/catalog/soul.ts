@@ -14,6 +14,7 @@ export const soulCinema: ModelEntry = {
   label: "Soul Cinema",
   roles: {},
   settings: soulSettings,
+  character: true,
 };
 
 export const soul2: ModelEntry = {
@@ -22,4 +23,5 @@ export const soul2: ModelEntry = {
   label: "Soul 2",
   roles: {},
   settings: soulSettings,
+  character: true,
 };

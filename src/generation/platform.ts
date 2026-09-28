@@ -35,6 +35,20 @@ export type StatusResult =
   | { requestId: string; status: GenerationStatus }
   | { requestId: string; error: string };
 
+/** A trained Soul ID. `status` walks not_ready → queued → in_progress and
+    settles on completed or failed. */
+export type Character = {
+  id: string;
+  name: string;
+  status: string;
+  modelVersion: string;
+  thumbnailUrl: string | null;
+  createdAt: string;
+  failReason: string | null;
+};
+
+export const CHARACTER_TERMINAL = new Set(["completed", "failed"]);
+
 export type PlatformClientOptions = {
   apiKey: string;
   baseUrl: string;
@@ -77,6 +91,81 @@ export function createPlatformClient(options: PlatformClientOptions) {
       if (!requestId) throw new PlatformError(400, { detail: "Missing request id" });
       return mapStatus(await send("GET", `/requests/${encodeURIComponent(requestId)}/status`));
     },
+    /** Two steps: the platform hands out a presigned S3 slot, the bytes go
+        straight to it. The slot is tagged `retention=temporary`, so the
+        public URL is an input for the next request, not a place to keep
+        anything. */
+    async upload(bytes: Uint8Array, contentType: string): Promise<string> {
+      const slot = asRecord(
+        await send("POST", "/files/generate-upload-url", { content_type: contentType }),
+      );
+      const uploadUrl = stringField(slot, "upload_url");
+      const publicUrl = stringField(slot, "public_url");
+      if (!uploadUrl || !publicUrl) {
+        throw new PlatformError(502, { detail: "Platform response missing upload url" });
+      }
+      const headers = asRecord(slot.upload_headers);
+      const put = await fetchImpl(uploadUrl, {
+        method: "PUT",
+        headers: Object.keys(headers).length
+          ? (headers as Record<string, string>)
+          : { "Content-Type": contentType },
+        body: bytes as BodyInit,
+      });
+      if (!put.ok) throw new PlatformError(put.status, { detail: "Upload to storage failed" });
+      return publicUrl;
+    },
+    async createCharacter(input: {
+      name: string;
+      imageUrls: string[];
+      modelVersion?: string;
+    }): Promise<Character> {
+      return mapCharacter(
+        await send("POST", "/v1/custom-references", {
+          name: input.name,
+          input_images: input.imageUrls.map((url) => ({ type: "image_url", image_url: url })),
+          ...(input.modelVersion ? { model_version: input.modelVersion } : {}),
+        }),
+      );
+    },
+    async getCharacter(id: string): Promise<Character> {
+      if (!id) throw new PlatformError(400, { detail: "Missing character id" });
+      return mapCharacter(await send("GET", `/v1/custom-references/${encodeURIComponent(id)}`));
+    },
+    async listCharacters(): Promise<Character[]> {
+      const data = asRecord(await send("GET", "/v1/custom-references/list?page=1&page_size=50"));
+      const items = Array.isArray(data.items) ? data.items.map(mapCharacter) : [];
+      /* The list carries no training photos, so the face for the card comes
+         from each character's own record. */
+      return Promise.all(
+        items.map((item) =>
+          item.thumbnailUrl
+            ? item
+            : this.getCharacter(item.id).catch(() => item),
+        ),
+      );
+    },
+  };
+}
+
+function mapCharacter(payload: unknown): Character {
+  const data = asRecord(payload);
+  const id = stringField(data, "id");
+  if (!id) throw new PlatformError(502, { detail: "Platform response missing character id" });
+  return {
+    id,
+    name: stringField(data, "name") ?? "",
+    status: stringField(data, "status") ?? "unknown",
+    modelVersion: stringField(data, "model_version") ?? "",
+    /* The platform leaves thumbnail_url null on trained characters; the first
+       training photo is the face the studio can show instead. */
+    thumbnailUrl:
+      stringField(data, "thumbnail_url") ??
+      (Array.isArray(data.reference_media)
+        ? (stringField(asRecord(data.reference_media[0]), "media_url") ?? null)
+        : null),
+    createdAt: stringField(data, "created_at") ?? "",
+    failReason: stringField(data, "fail_reason") ?? null,
   };
 }
 

@@ -7,13 +7,24 @@ import { parseSettings } from "@/generation/catalog";
 import type { ModelEntry, Surface } from "@/generation/catalog";
 import { MAX_BATCH, useActive } from "@/generation/stores/active";
 import { useImagePrompt, useVideoPrompt } from "@/generation/stores/prompt";
+import { useCharacter } from "@/generation/stores/character";
 import { useSettings } from "@/generation/stores/settings";
 
 import { swatchFor } from "./artwork";
 import { AssetPicker } from "./asset-picker";
 import { PROMPT_PLACEHOLDERS, countSetting } from "./data";
 import type { RunRecord } from "./history";
-import { ArrowUpIcon, CaretDownIcon, CloseIcon, MinusIcon, PlusIcon, WarningIcon } from "./icons";
+import {
+  ArrowUpIcon,
+  CaretDownIcon,
+  CloseIcon,
+  MinusIcon,
+  ObjectIcon,
+  PersonIcon,
+  PlusIcon,
+  WarningIcon,
+} from "./icons";
+import { CharacterPopover, ObjectsPopover } from "./library";
 import { MediaStrip, useMediaTray } from "./media-tray";
 import { ModelIcon, modelIconSrc } from "./model-icon";
 import { ModelPicker } from "./model-picker";
@@ -24,6 +35,8 @@ import { SettingPill, SettingPopover } from "./settings";
    closed union. */
 const PICKER = "picker";
 const ASSETS = "assets";
+const CHARACTER = "character";
+const OBJECTS = "objects";
 const SETTING = "setting:";
 
 const PROMPT_MAX_HEIGHT = 168;
@@ -38,6 +51,7 @@ const POPOVER_GAP = 8;
 /** Declared widths keep an opening popover inside the composer's own column. */
 function popoverWidth(id: string, model: ModelEntry): number {
   if (id === PICKER || id === ASSETS) return 560;
+  if (id === CHARACTER || id === OBJECTS) return 280;
   /* A list of an enum's values is the narrow panel; a slider needs its travel. */
   if (id.startsWith(SETTING) && model.settings[id.slice(SETTING.length)]?.type === "enum") {
     return 216;
@@ -57,6 +71,8 @@ export function Composer({
   selecting,
   onError,
   onGenerate,
+  onManageCharacters,
+  onManageObjects,
 }: {
   surface: Surface;
   model: ModelEntry;
@@ -75,6 +91,8 @@ export function Composer({
   selecting: boolean;
   onError: (message: string | null) => void;
   onGenerate: () => void;
+  onManageCharacters: () => void;
+  onManageObjects: () => void;
 }) {
   const setModel = useActive((state) => state.setModel);
   const batch = useActive((state) => state.batch);
@@ -85,6 +103,7 @@ export function Composer({
   const settings = useSettings();
   const values = parseSettings(model, settings.byModel[model.id] ?? {});
   const tray = useMediaTray(model, onError);
+  const characterName = useCharacter((state) => (state.id ? state.name : null));
 
   const [overlay, setOverlay] = useState<string | null>(null);
   const [anchor, setAnchor] = useState({ x: 0, y: 0 });
@@ -259,6 +278,25 @@ export function Composer({
             onClose={() => setOverlay(null)}
           />
         )}
+        {overlay === CHARACTER && (
+          <CharacterPopover
+            onManage={() => {
+              setOverlay(null);
+              onManageCharacters();
+            }}
+          />
+        )}
+        {overlay === OBJECTS && (
+          <ObjectsPopover
+            model={model}
+            onError={onError}
+            onDone={() => setOverlay(null)}
+            onManage={() => {
+              setOverlay(null);
+              onManageObjects();
+            }}
+          />
+        )}
         {overlay === PICKER && (
           <ModelPicker
             selectedId={model.id}
@@ -347,6 +385,44 @@ export function Composer({
                     <CaretDownIcon />
                   </span>
                 </button>
+
+                {/* Who is in the picture: a trained Soul ID, on the models
+                    that take one. Held studio-wide, so it survives a model
+                    swap between Soul 2 and Soul Cinema. */}
+                {model.character && (
+                  <button
+                    type="button"
+                    className="ohf-ctl ohf-tip"
+                    data-tip="Character"
+                    data-picked={characterName !== null}
+                    aria-expanded={overlay === CHARACTER}
+                    aria-haspopup="dialog"
+                    aria-label={`Character — ${characterName ?? "none"}`}
+                    onClick={(event) => toggle(CHARACTER, event.currentTarget)}
+                  >
+                    <span className="ohf-ctl-glyph" aria-hidden>
+                      <PersonIcon size={13} />
+                    </span>
+                    <span className="ohf-ctl-value">{characterName ?? "No character"}</span>
+                  </button>
+                )}
+
+                {model.roles.reference ? (
+                  <button
+                    type="button"
+                    className="ohf-ctl ohf-tip"
+                    data-tip="Attach a saved object"
+                    aria-expanded={overlay === OBJECTS}
+                    aria-haspopup="dialog"
+                    aria-label="Objects"
+                    onClick={(event) => toggle(OBJECTS, event.currentTarget)}
+                  >
+                    <span className="ohf-ctl-glyph" aria-hidden>
+                      <ObjectIcon size={13} />
+                    </span>
+                    <span className="ohf-ctl-value">Objects</span>
+                  </button>
+                ) : null}
 
                 {settingKeys.map((key) => (
                   <SettingPill

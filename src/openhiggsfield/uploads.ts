@@ -1,9 +1,8 @@
 import { browserLegacy, defaultKv, type Kv, type LegacyStore } from "./idb";
 import type { AssetKind } from "./data";
 
-/** A file the visitor sent to Blob. The URL is public and permanent, so the
-    library outlives the session that produced it — the same reason run history
-    is kept, and the reason the asset picker can offer both. */
+/** A file the visitor uploaded. The platform tags uploads as temporary, so
+    an old shelf entry can stop resolving — keep what must last in Objects. */
 export interface UploadRecord {
   id: string;
   url: string;

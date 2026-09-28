@@ -27,11 +27,17 @@ export type ModelEntry = {
   settings: Record<string, SettingField>;
   /** Submit paths when the shared mapper is enough. Soul, Kling 3, and Seedance keep custom maps. */
   paths?: PlatformPaths;
+  /** Accepts a trained Soul ID as `custom_reference_id`. */
+  character?: boolean;
 };
+
+/** A trained Soul ID riding on the plane, and how hard the model holds to it. */
+export type CharacterPick = { id: string; strength: number };
 
 export type GenerationPlane = {
   model: string;
   prompt: { text: string };
   media: Partial<Record<MediaRole, MediaItem[]>>;
   settings: Record<string, unknown>;
+  character?: CharacterPick;
 };

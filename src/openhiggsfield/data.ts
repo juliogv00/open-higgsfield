@@ -162,11 +162,11 @@ export function roleNoun(role: MediaRole, count: number): string {
   return count === 1 ? ROLE_LABELS[role].toLowerCase() : ROLE_PLURALS[role];
 }
 
-/* Mirrors the allow-list in src/app/api/blob/route.ts. */
+/* HEIC is converted to JPEG on the server (src/generation/images.ts). */
 export const ROLE_ACCEPT: Record<MediaRole, string> = {
-  start: "image/jpeg,image/png,image/webp,image/gif",
-  end: "image/jpeg,image/png,image/webp,image/gif",
-  reference: "image/jpeg,image/png,image/webp,image/gif",
+  start: "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif",
+  end: "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif",
+  reference: "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif",
   video: "video/mp4",
   audio: "audio/wav,audio/x-wav",
 };

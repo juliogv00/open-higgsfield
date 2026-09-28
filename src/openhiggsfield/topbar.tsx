@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { VIEWS, VIEW_LABELS, type GalleryView } from "./data";
-import { AssetsIcon, HeartIcon, ImageIcon, KeyIcon, VideoIcon } from "./icons";
+import { AssetsIcon, HeartIcon, ImageIcon, KeyIcon, ObjectIcon, PersonIcon, VideoIcon } from "./icons";
 
 const VIEW_ICONS: Record<GalleryView, () => React.ReactNode> = {
   image: () => <ImageIcon />,
@@ -18,12 +18,16 @@ export function Topbar({
   busy,
   keyConfigured,
   onKeys,
+  onCharacters,
+  onObjects,
 }: {
   view: GalleryView;
   onView: (next: GalleryView) => void;
   busy: boolean;
   keyConfigured: boolean;
   onKeys: () => void;
+  onCharacters: () => void;
+  onObjects: () => void;
 }) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const [thumb, setThumb] = useState<{ x: number; w: number } | null>(null);
@@ -124,6 +128,22 @@ export function Topbar({
           whether one is held and opens the modal that sets it — and its lamp is
           the studio's liveness, the one place accent moves. */}
       <div className="ohf-bar ohf-enter-1">
+        {/* The two libraries the composer draws on: trained people and saved
+            objects. They open as dialogs over the studio, like the key. */}
+        <button
+          type="button"
+          className="ohf-key"
+          onClick={onCharacters}
+          aria-label="Characters"
+          title="Characters"
+        >
+          <PersonIcon />
+          <span className="ohf-key-text">Characters</span>
+        </button>
+        <button type="button" className="ohf-key" onClick={onObjects} aria-label="Objects" title="Objects">
+          <ObjectIcon />
+          <span className="ohf-key-text">Objects</span>
+        </button>
         <button
           type="button"
           className="ohf-key"

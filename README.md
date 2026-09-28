@@ -96,8 +96,8 @@ Each generate is one object: `{ model, prompt, media, settings }`.
   no studio changes.
 - **Five small Zustand stores** — shared image/video prompt, shared image/video
   media, `settings[modelId]`, and a tiny `active` store. No store per model.
-- **Uploads** go client-direct to Vercel Blob through `/api/blob`, which issues
-  scoped tokens. `blob:` URLs are preview-only.
+- **Uploads** go through a server action that normalizes the file (HEIC,
+  EXIF rotation, 2048 px) and puts it on the platform's storage.
 
 ---
 
@@ -113,9 +113,27 @@ Open the studio, press **Add key**, and paste your platform key as `id:secret`.
 ### Environment
 
 ```bash
-HF_API_BASE_URL=                      # generation API origin, server only
-OPEN_HIGGSFIELD_READ_WRITE_TOKEN=     # Vercel Blob read-write token
+HF_API_BASE_URL=https://api.higgsfield.ai   # generation API origin, server only
+IMAGEN_GATEWAY_CAP_EUR=5                    # optional daily spending cap (EUR)
 ```
+
+The platform key is read from the macOS Keychain (`vmnte-higgsfield-id` /
+`vmnte-higgsfield-secret`) and falls back to the key typed into the modal.
+Uploads go to the platform's own storage — no Vercel Blob account needed.
+
+### Characters and objects (VMNTe fork)
+
+- **Characters** — train a Soul ID once from 5–80 photos of one person (HEIC
+  fine) and pick it on Soul 2 / Soul Cinema. Sent as `custom_reference_id`.
+  Training costs 40 credits and is booked against the daily cap before it runs.
+- **Objects** — named sets of reference images kept in
+  `~/Library/Application Support/OpenHiggsfield/objetos/`, re-uploaded on use.
+- **Soul takes no reference images on this API** (five field names tried, all
+  dropped in silence). To put an object into a Soul shot, generate the shot,
+  then switch to **Qwen Image 3 Edit** and attach the shot first, the object
+  after it.
+- Every paid call is logged to `~/dev/logs/open-higgsfield.log` and counted in
+  `~/dev/logs/imagen-gateway-spend.json`, the same ledger the VMNTe gateway uses.
 
 ### Commands
 
@@ -133,7 +151,7 @@ OPEN_HIGGSFIELD_READ_WRITE_TOKEN=     # Vercel Blob read-write token
 ```
 src/
   app/          /  is the full-viewport studio and the only page
-                /api/blob issues upload tokens
+                /api/objects serves the local object library
                 base.css owns the document canvas
   generation/   generate requests, server actions, API mapping, catalog, stores
   openhiggsfield/

@@ -1,6 +1,7 @@
 import { getModel, parseSettings } from "./catalog";
 import type { GenerationPlane } from "./catalog/types";
 import { useActive } from "./stores/active";
+import { useCharacter } from "./stores/character";
 import { useImageMedia, useVideoMedia } from "./stores/media";
 import { useImagePrompt, useVideoPrompt } from "./stores/prompt";
 import { useSettings } from "./stores/settings";
@@ -19,10 +20,14 @@ export function assemblePlane(): GenerationPlane {
     list.push(item);
     media[item.role] = list;
   }
+  const character = useCharacter.getState();
   return {
     model: model.id,
     prompt: { text },
     media,
     settings: parseSettings(model, useSettings.getState().byModel[model.id] ?? {}),
+    ...(model.character && character.id
+      ? { character: { id: character.id, strength: character.strength } }
+      : {}),
   };
 }

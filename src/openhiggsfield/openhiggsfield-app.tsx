@@ -17,6 +17,7 @@ import { GRAIN_URI, artFor } from "./artwork";
 import { Composer } from "./composer";
 import { fileNameFor, saveFile } from "./download";
 import { KeyModal } from "./key-modal";
+import { CharactersDialog, ObjectsDialog } from "./library";
 import {
   CROSS_VIEWS,
   countSetting,
@@ -154,7 +155,10 @@ function describeError(caught: unknown): string {
   if (caught instanceof MissingCredentialsError || message.includes("Missing platform key")) {
     return "Add your platform key to generate.";
   }
-  return `Generation failed — ${message}. Try again; if it repeats, check the key in the sidebar.`;
+  /* The spending cap is a decision, not a fault: retrying or checking the key
+     would not help, so its own sentence stands alone. */
+  if (message.startsWith("Daily spending cap")) return message;
+  return `Generation failed — ${message.replace(/\.$/, "")}. Try again; if it repeats, check the key in the sidebar.`;
 }
 
 export function OpenHiggsfieldApp({ fontClassName = "" }: { fontClassName?: string }) {
@@ -181,6 +185,7 @@ export function OpenHiggsfieldApp({ fontClassName = "" }: { fontClassName?: stri
   const [saving, setSaving] = useState<SaveProgress | null>(null);
   const [keyConfigured, setKeyConfigured] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
+  const [library, setLibrary] = useState<"characters" | "objects" | null>(null);
 
   const galleryRef = useRef<HTMLDivElement>(null);
   const rangeAnchor = useRef<number | null>(null);
@@ -597,6 +602,8 @@ export function OpenHiggsfieldApp({ fontClassName = "" }: { fontClassName?: stri
 
   const openViewer = useCallback((id: string) => setViewerId(id), []);
   const openKeys = useCallback(() => setKeysOpen(true), []);
+  const openCharacters = useCallback(() => setLibrary("characters"), []);
+  const openObjects = useCallback(() => setLibrary("objects"), []);
   const runGenerate = useCallback(() => void generate(), [generate]);
   const downloadSelection = useCallback(() => void downloadPicked(), [downloadPicked]);
   const dismissDeleted = useCallback(() => setDeleted(null), []);
@@ -630,6 +637,8 @@ export function OpenHiggsfieldApp({ fontClassName = "" }: { fontClassName?: stri
             busy={busy}
             keyConfigured={keyConfigured}
             onKeys={openKeys}
+            onCharacters={openCharacters}
+            onObjects={openObjects}
           />
 
           <Gallery
@@ -669,6 +678,8 @@ export function OpenHiggsfieldApp({ fontClassName = "" }: { fontClassName?: stri
             }
             onError={setError}
             onGenerate={runGenerate}
+            onManageCharacters={openCharacters}
+            onManageObjects={openObjects}
             notice={
               deleted && (
                 <UndoBar
@@ -697,6 +708,8 @@ export function OpenHiggsfieldApp({ fontClassName = "" }: { fontClassName?: stri
             }}
           />
         )}
+        {library === "characters" && <CharactersDialog onClose={() => setLibrary(null)} />}
+        {library === "objects" && <ObjectsDialog onClose={() => setLibrary(null)} />}
         {keysOpen && (
           <KeyModal
             configured={keyConfigured}

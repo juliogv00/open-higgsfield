@@ -32,6 +32,11 @@ function urls(plane: GenerationPlane, role: "start" | "end" | "reference" | "vid
   return (plane.media[role] ?? []).map((item) => item.url);
 }
 
+/* Soul takes a trained character as `custom_reference_id` — confirmed on real
+   runs (spec crear-personajes-open-higgsfield, T4). It takes no image
+   reference on this API: `image_url`, `image_reference`, `image_urls`,
+   `image_references` and `input_images` were all dropped in silence and
+   charged. Objects go in afterwards, through Qwen Image 3 Edit. */
 function mapSoul(plane: GenerationPlane, path: string): Mapped {
   return {
     path,
@@ -41,6 +46,12 @@ function mapSoul(plane: GenerationPlane, path: string): Mapped {
       resolution: plane.settings.resolution,
       aspect_ratio: plane.settings.aspectRatio,
       enhance_prompt: plane.settings.enhancePrompt,
+      ...(plane.character
+        ? {
+            custom_reference_id: plane.character.id,
+            custom_reference_strength: plane.character.strength,
+          }
+        : {}),
     },
   };
 }

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import type { MediaItem, MediaRole, ModelEntry } from "@/generation/catalog";
 import { useImageMedia, useVideoMedia } from "@/generation/stores/media";
-import { uploadMedia } from "@/generation/upload";
+import { uploadMedia } from "@/generation/actions";
 
 import { ROLE_ACCEPT, ROLE_LABELS, ROLE_TAGS, rolesOf } from "./data";
 import { AudioIcon, CloseIcon, VideoIcon } from "./icons";
@@ -22,7 +22,7 @@ export interface MediaTray {
   /** The current surface's attachments, so the picker can derive its own caps
       from the same list the strip below renders. */
   items: MediaItem[];
-  /** Every file this browser has sent to Blob, newest first. */
+  /** Every file this browser has uploaded, newest first. */
   uploads: UploadRecord[];
   /** The URL of the last file uploaded from the picker. It goes onto the shelf
       and into the panel's selection, not onto the plane — the panel stages the
@@ -85,7 +85,9 @@ export function useMediaTray(
     onError(null);
     setUploading(true);
     try {
-      const uploaded = await uploadMedia(file);
+      const form = new FormData();
+      form.set("file", file);
+      const uploaded = await uploadMedia(form);
       /* The file outlives this run: it joins the shelf the picker offers, so a
          reference used once can be reached again without a second upload. */
       setStaged(uploaded.url);
@@ -101,7 +103,7 @@ export function useMediaTray(
     } catch (caught) {
       onError(
         caught instanceof Error
-          ? `Upload failed — ${caught.message}. Check the Blob store is configured, then retry.`
+          ? `Upload failed — ${caught.message}. Retry, or check the platform key.`
           : "Upload failed. Retry, or drop the file and generate from the prompt alone.",
       );
     } finally {
@@ -167,7 +169,7 @@ export function MediaStrip({ model }: { model: ModelEntry }) {
                 {item.role === "audio" ? <AudioIcon size={20} /> : <VideoIcon size={20} />}
               </span>
             ) : (
-              /* Blob-hosted user upload; next/image would proxy an arbitrary
+              /* Platform-hosted upload; next/image would proxy an arbitrary
                  remote host for a 56px thumb. */
               /* eslint-disable-next-line @next/next/no-img-element */
               <img

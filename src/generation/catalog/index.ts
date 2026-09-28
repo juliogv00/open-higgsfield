@@ -25,6 +25,7 @@ import { minimaxHailuo23 } from "./minimax-hailuo-2.3";
 import { parseSettings } from "./parse-settings";
 import { pixverse6 } from "./pixverse-6";
 import { qwenImage3 } from "./qwen-image-3";
+import { qwenImage3Edit } from "./qwen-image-3-edit";
 import { recraft41 } from "./recraft-4.1";
 import { seedance2, seedance2Fast, seedance2Mini } from "./seedance-2";
 import { seedance25, seedance25Edit, seedance25Extend } from "./seedance-2.5";
@@ -39,6 +40,7 @@ import { zImageTurbo } from "./z-image-turbo";
 export const MODELS: readonly ModelEntry[] = [
   soul2,
   soulCinema,
+  qwenImage3Edit,
   seedance25,
   seedance25Edit,
   seedance25Extend,
@@ -83,5 +85,5 @@ export function getModel(id: string): ModelEntry {
   return model;
 }
 
-export type { GenerationPlane, MediaItem, MediaRole, ModelEntry, PlatformPaths, Surface } from "./types";
+export type { CharacterPick, GenerationPlane, MediaItem, MediaRole, ModelEntry, PlatformPaths, Surface } from "./types";
 export { parseSettings };

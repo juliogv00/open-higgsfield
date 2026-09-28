@@ -307,3 +307,21 @@ export function WaveBadgeIcon({ size = 12 }: IconProps) {
     </svg>
   );
 }
+
+export function PersonIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <circle cx="8" cy="5.4" r="2.9" />
+      <path d="M2.8 14.2c.6-2.7 2.7-4.3 5.2-4.3s4.6 1.6 5.2 4.3" />
+    </svg>
+  );
+}
+
+export function ObjectIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <path d="M8 1.9 13.6 5v6L8 14.1 2.4 11V5Z" />
+      <path d="M2.6 5.1 8 8.1l5.4-3M8 8.1v5.8" />
+    </svg>
+  );
+}
