@@ -114,7 +114,7 @@ Open the studio, press **Add key**, and paste your platform key as `id:secret`.
 
 ```bash
 HF_API_BASE_URL=https://api.higgsfield.ai   # generation API origin, server only
-IMAGEN_GATEWAY_CAP_EUR=5                    # optional daily spending cap (EUR)
+IMAGEN_GATEWAY_CAP_EUR=0                    # optional daily cap in EUR; 0 = no cap
 ```
 
 The platform key is read from the macOS Keychain (`vmnte-higgsfield-id` /
@@ -125,14 +125,14 @@ Uploads go to the platform's own storage — no Vercel Blob account needed.
 
 - **Characters** — train a Soul ID once from 5–80 photos of one person (HEIC
   fine) and pick it on Soul 2 / Soul Cinema. Sent as `custom_reference_id`.
-  Training costs 40 credits and is booked against the daily cap before it runs.
+  Training costs 40 credits and is booked in the daily ledger before it runs.
 - **Objects** — named sets of reference images kept in
   `~/Library/Application Support/OpenHiggsfield/objetos/`, re-uploaded on use.
 - **Soul takes no reference images on this API** (five field names tried, all
   dropped in silence). To put an object into a Soul shot, generate the shot,
   then switch to **Qwen Image 3 Edit** and attach the shot first, the object
   after it.
-- Every paid call is logged to `~/dev/logs/open-higgsfield.log` and counted in
+- Every paid call is logged to `~/dev/logs/open-higgsfield.log` and counted (0 = no cap) in
   `~/dev/logs/imagen-gateway-spend.json`, the same ledger the VMNTe gateway uses.
 
 ### Commands

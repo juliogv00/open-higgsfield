@@ -4,12 +4,13 @@ import { dirname, join } from "node:path";
 
 import type { ModelEntry } from "./catalog/types";
 
-/* One daily ceiling for everything that spends on Higgsfield: this studio and
+/* One daily ledger (and optional ceiling) for everything that spends on Higgsfield: this studio and
    the VMNTe image gateway (:8199) read and write the same ledger. The platform
    exposes no balance endpoint, so this is the only automatic brake there is. */
 const LEDGER = join(homedir(), "dev/logs/imagen-gateway-spend.json");
 const LOG = join(homedir(), "dev/logs/open-higgsfield.log");
-const DAILY_CAP_EUR = Number(process.env.IMAGEN_GATEWAY_CAP_EUR ?? "5");
+/* 0 = no cap: every spend is still counted and logged, nothing is cut. */
+const DAILY_CAP_EUR = Number(process.env.IMAGEN_GATEWAY_CAP_EUR ?? "0");
 
 /* Declared rates, deliberately high — the API reports `base_credits` as 0 for
    almost every model. Same convention as the gateway: 1 credit ≈ 0.10 EUR. */
@@ -60,7 +61,7 @@ export function priceFor(model: ModelEntry, results: number): number {
     is charged all the same. */
 export async function reserveSpend(price: number, event: Record<string, unknown>) {
   const ledger = await readLedger();
-  if (ledger.spent_eur + price > DAILY_CAP_EUR) throw new SpendCapError(ledger.spent_eur, price);
+  if (DAILY_CAP_EUR > 0 && ledger.spent_eur + price > DAILY_CAP_EUR) throw new SpendCapError(ledger.spent_eur, price);
   ledger.spent_eur = Math.round((ledger.spent_eur + price) * 10_000) / 10_000;
   ledger.generations += 1;
   await mkdir(/*turbopackIgnore: true*/ dirname(LEDGER), { recursive: true });

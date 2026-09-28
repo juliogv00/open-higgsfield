@@ -237,7 +237,7 @@ export function CharactersDialog({ onClose }: { onClose: () => void }) {
 
   const min = quote?.minPhotos ?? 5;
   const max = quote?.maxPhotos ?? 80;
-  const overCap = quote ? quote.spent + quote.eur > quote.cap : false;
+  const overCap = quote ? quote.cap > 0 && quote.spent + quote.eur > quote.cap : false;
   const ready =
     phase === "idle" && name.trim().length > 0 && files.length >= min && files.length <= max && confirmed && !overCap;
 
@@ -348,7 +348,8 @@ export function CharactersDialog({ onClose }: { onClose: () => void }) {
           <span>
             Training costs {quote?.credits ?? 40} credits (about {(quote?.eur ?? 4).toFixed(2)} € at the declared
             rate) and is charged even if it fails.
-            {quote && ` Spent today: ${quote.spent.toFixed(2)} € of ${quote.cap.toFixed(2)} €.`}
+            {quote &&
+              ` Counted today: ${quote.spent.toFixed(2)} €${quote.cap > 0 ? ` of ${quote.cap.toFixed(2)} €` : ""}.`}
           </span>
         </label>
         {overCap && (
