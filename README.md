@@ -125,13 +125,16 @@ Uploads go to the platform's own storage — no Vercel Blob account needed.
 - **Characters** — train a Soul ID once from 5–80 photos of one person (HEIC
   fine) and pick it on Soul 2 / Soul Cinema. Sent as `custom_reference_id`.
   Training draws on the Higgsfield balance; the real cost is on the dashboard.
-- **Objects** — named sets of reference images kept in
-  `~/Library/Application Support/OpenHiggsfield/objetos/`, re-uploaded on use.
+- **Objects** — named sets of reference images kept in `../datos/objetos/`,
+  re-uploaded on use.
 - **Soul takes no reference images on this API** (five field names tried, all
   dropped in silence). To put an object into a Soul shot, generate the shot,
   then switch to **Qwen Image 3 Edit** and attach the shot first, the object
   after it.
-- Every platform call is logged (no prices) to `~/dev/logs/open-higgsfield.log`.
+- Every platform call is logged (no prices) to `../logs/eventos.log`.
+- Run it with `scripts/ohf.sh` (or the `Open Higgsfield.app` launcher); see
+  `CLAUDE.md` for the folder layout and `docs/higgsfield-api.md` for what is
+  verified about the API.
 
 ### Commands
 

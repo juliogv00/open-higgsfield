@@ -1,13 +1,12 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
+
+import { DATA_DIR } from "./paths";
 
 /* Reference sets live on this disk, not on the platform: its uploads are
    tagged `retention=temporary`, so a set is re-uploaded every time it is used
    rather than trusted to a URL that will expire. */
-export const LIBRARY_ROOT =
-  process.env.OHF_LIBRARY_DIR ??
-  join(homedir(), "Library/Application Support/OpenHiggsfield/objetos");
+export const LIBRARY_ROOT = process.env.OHF_LIBRARY_DIR ?? join(DATA_DIR, "objetos");
 
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const FILE_RE = /^\d{2}\.jpg$/;
